@@ -11,7 +11,7 @@ import javax.sql.DataSource;
 public class NewDataSourceConfig {
 
     @Bean
-    @ConfigurationProperties("ring.datasource.newdb")
+    @ConfigurationProperties("spring.datasource.newdb")
     public DataSource newDataSource(){
         return DataSourceBuilder.create().build();
     }
