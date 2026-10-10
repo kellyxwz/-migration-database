@@ -1,6 +1,5 @@
 package com.db.migration.model.legacy;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

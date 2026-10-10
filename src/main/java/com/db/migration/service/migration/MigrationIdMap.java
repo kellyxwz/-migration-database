@@ -13,7 +13,7 @@ import lombok.Setter;
 public class MigrationIdMap {
 
     private String entity;
-    private Long legacyId;
+    private Integer legacyId;
     private String newId;
 
 }
