@@ -2,6 +2,7 @@ package com.db.migration.service.migration;
 
 import com.db.migration.model.legacy.SetorLegacy;
 import com.db.migration.model.target.Department;
+import com.db.migration.model.target.MigrationIdMap;
 import com.db.migration.repository.legacy.SetorLegacyRepository;
 import com.db.migration.repository.target.DepartmentRepository;
 import com.db.migration.repository.target.MigrationIdMapRepository;

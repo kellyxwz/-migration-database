@@ -1,4 +1,4 @@
-package com.db.migration.service.migration;
+package com.db.migration.model.target;
 
 
 import lombok.AllArgsConstructor;

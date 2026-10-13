@@ -1,12 +1,11 @@
 package com.db.migration.repository.target;
 
-import com.db.migration.service.migration.MigrationIdMap;
+import com.db.migration.model.target.MigrationIdMap;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
-import java.util.List;
 
 @Repository
 public class MigrationIdMapRepository {
