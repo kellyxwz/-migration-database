@@ -1,0 +1,36 @@
+# Ambiente do desafio: sobe o banco legado (MySQL) já com o backup restaurado
+# e o banco novo (PostgreSQL) já com o schema vazio criado.
+#
+#   docker compose up -d
+#
+#   Legado  -> mysql://root:legado@localhost:3307/helpdesk
+#   Novo    -> postgresql://helpdesk:novo@localhost:5433/helpdesk
+#
+# Para recomeçar do zero: docker compose down -v && docker compose up -d
+services:
+  legado:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: legado
+      MYSQL_DATABASE: helpdesk
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./legado/backup_helpdesk_legado.sql:/docker-entrypoint-initdb.d/01_backup.sql:ro
+      - legado_data:/var/lib/mysql
+
+  novo:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: helpdesk
+      POSTGRES_PASSWORD: novo
+      POSTGRES_DB: helpdesk
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./novo/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - novo_data:/var/lib/postgresql/data
+
+volumes:
+  legado_data:
+  novo_data:
