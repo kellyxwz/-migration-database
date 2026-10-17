@@ -25,7 +25,7 @@ public class UsuarioLegacyRepository {
 
         return jdbcTemplate.query
                 (sql, (rs, rowNum) ->
-                        new UsuarioLegacy( rs.getInt("cd_usuario"),
+                        new UsuarioLegacy( rs.getLong("cd_usuario"),
                                 rs.getString("nm_usuario"),
                                 rs.getString("ds_email"),
                                 rs.getString("nr_telefone"),

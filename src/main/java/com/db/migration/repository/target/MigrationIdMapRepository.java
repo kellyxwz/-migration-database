@@ -6,6 +6,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
+import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public class MigrationIdMapRepository {
@@ -31,6 +33,22 @@ public class MigrationIdMapRepository {
         );
     }
 
+    public Object findNewId(String entity, Long legacyId) {
+        String sql = """
+            SELECT new_id
+            FROM migration_id_map
+            WHERE entity = ?
+              AND legacy_id = ?
+            """;
+
+        return jdbcTemplate.queryForObject(
+                sql,
+                Object.class,
+                entity,
+                legacyId
+        );
+    }
+
     public boolean exists(String entity, Long legacyId) {
 
         String sql = """
@@ -53,5 +71,20 @@ public class MigrationIdMapRepository {
     }
 
 
+    public Optional<Long> findDepartmentNewId( String entity,Long legacyId) {
+        String sql = """
+            SELECT new_id
+            FROM migration_id_map
+            WHERE entity = 'departments'
+              AND legacy_id = ?
+            """;
 
+        return jdbcTemplate.query(
+                sql,
+                rs -> rs.next()
+                        ? Optional.of(rs.getLong("new_id"))
+                        : Optional.empty(),
+                legacyId
+        );
+    }
 }

@@ -11,7 +11,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class SetorLegacy {
 
-    private Integer cdSetor;
+    private Long cdSetor;
     private String nmSetor;
     private String flAtivo;
 

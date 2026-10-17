@@ -50,7 +50,7 @@ public class DepartmentMigrationService {
 
             if (migrationIdMapRepository.exists(
                     "department",
-                    (long) principal.getCdSetor())) {
+                    (Long) principal.getCdSetor())) {
 
                 continue;
             }

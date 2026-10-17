@@ -20,11 +20,11 @@ public class UsersRepository {
 
     public UUID save(Users users) {
         String sql = """
-                INSERT INTO users (first_name, last_name, email,
-                 phone, department_id, role, status, password_hash,
-                 must_reset_password, created_at, updated_at, legacy_id)
-                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                RETURNING id
+                INSERT INTO users (first_name, last_name, email,\s
+                    phone, department_id, role, status, password_hash,\s
+                    must_reset_password, created_at, updated_at, legacy_id)
+                    VALUES(?, ?, ?, ?, ?, ?::user_role, ?::user_status, ?, ?, ?, ?, ?)
+                    RETURNING id
                 """;
 
         return jdbc.queryForObject(
@@ -41,8 +41,8 @@ public class UsersRepository {
                 users.isMustResetPassword(),
                 users.getCreatedAt() == null ? null
                         : Timestamp.from(users.getCreatedAt()),
-                users.getUpdateAt() == null ? null
-                        : Timestamp.from(users.getUpdateAt()),
+                users.getUpdatedAt() == null ? null
+                        : Timestamp.from(users.getUpdatedAt()),
                 users.getLegacyId()
                 );
 

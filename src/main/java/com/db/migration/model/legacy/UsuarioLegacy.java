@@ -11,7 +11,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class UsuarioLegacy {
 
-    private Integer cdUsuario;
+    private Long cdUsuario;
     private String name;
     private String dsEmail;
     private String nrTelefone;

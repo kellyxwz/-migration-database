@@ -20,14 +20,14 @@ public class Users {
     private String lastName;
     private String email;
     private String phone;
-    private Integer departmentId;
+    private Long departmentId;
     private String role;
     private String status;
     private String passwordHash;
     private boolean mustResetPassword;
     private Instant createdAt;
-    private Instant updateAt;
-    private Integer legacyId;
+    private Instant updatedAt;
+    private Long legacyId;
 
 
 }
