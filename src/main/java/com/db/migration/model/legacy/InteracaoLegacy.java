@@ -15,7 +15,8 @@ public class InteracaoLegacy {
     
   private Long cdInteracao;
   private Long nrChamado;
-  private Long dsInteracao;
+  private Long cd_usuario;
+  private String dsInteracao;
   private Instant dtInteracao;
   private String flIntercao;
   

@@ -1,13 +1,22 @@
+
 package com.db.migration.service.migration;
 
 import com.db.migration.model.legacy.UsuarioLegacy;
+import com.db.migration.model.legacy.UserActivityDateLegacy;
 import com.db.migration.model.target.MigrationIdMap;
 import com.db.migration.model.target.Users;
+import com.db.migration.repository.legacy.ChamadoLegacyRepository;
+import com.db.migration.repository.legacy.InteracaoLegacyRepository;
 import com.db.migration.repository.legacy.UsuarioLegacyRepository;
 import com.db.migration.repository.target.MigrationIdMapRepository;
 import com.db.migration.repository.target.UsersRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -15,26 +24,40 @@ import java.util.stream.Collectors;
 @Service
 public class UsersMigrationService {
 
+    private static final Pattern EMAIL_PATTERN = Pattern.compile(
+            "^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,}$"
+    );
+
+    private static final ZoneId LEGACY_ZONE =
+            ZoneId.of("America/Sao_Paulo");
+
     private final UsersRepository usersRepository;
     private final MigrationIdMapRepository migrationIdMapRepository;
     private final UsuarioLegacyRepository usuarioLegacyRepository;
+    private final ChamadoLegacyRepository chamadoLegacyRepository;
+    private final InteracaoLegacyRepository interacaoLegacyRepository;
 
-    public UsersMigrationService(UsersRepository usersRepository, MigrationIdMapRepository migrationIdMapRepository, UsuarioLegacyRepository usuarioLegacyRepository) {
+    public UsersMigrationService(
+            UsersRepository usersRepository,
+            MigrationIdMapRepository migrationIdMapRepository,
+            UsuarioLegacyRepository usuarioLegacyRepository,
+            ChamadoLegacyRepository chamadoLegacyRepository,
+            InteracaoLegacyRepository interacaoLegacyRepository
+    ) {
         this.usersRepository = usersRepository;
         this.migrationIdMapRepository = migrationIdMapRepository;
         this.usuarioLegacyRepository = usuarioLegacyRepository;
+        this.chamadoLegacyRepository = chamadoLegacyRepository;
+        this.interacaoLegacyRepository = interacaoLegacyRepository;
     }
 
     public void migrateUsers() {
+        List<UsuarioLegacy> users = usuarioLegacyRepository.findAll();
 
-        List<UsuarioLegacy> legacyUsers = usuarioLegacyRepository.findAll();
+        Map<Long, List<Instant>> activityDates = loadActivityDates();
 
-
-        List<UsuarioLegacy> eligibleUsers = legacyUsers.stream()
+        Map<String, List<UsuarioLegacy>> groups = users.stream()
                 .filter(user -> !isTestAccount(user.getDsEmail()))
-                .toList();
-
-        Map<String, List<UsuarioLegacy>> groups = eligibleUsers.stream()
                 .collect(Collectors.groupingBy(
                         user -> normalizeEmail(
                                 user.getDsEmail(),
@@ -50,158 +73,134 @@ public class UsersMigrationService {
             group.sort(Comparator.comparing(UsuarioLegacy::getCdUsuario));
             UsuarioLegacy principal = group.get(0);
 
-            Users newUser = buildNewUser(group, principal, entry.getKey());
+            Users newUser = buildUser(
+                    group,
+                    principal,
+                    entry.getKey(),
+                    activityDates
+            );
 
             UUID newUserId = usersRepository.save(newUser);
 
             for (UsuarioLegacy legacyUser : group) {
-
-                MigrationIdMap migration= new MigrationIdMap(
+                migrationIdMapRepository.save(new MigrationIdMap(
                         "users",
                         legacyUser.getCdUsuario(),
-                        String.valueOf(newUserId)
-                );
-
-                migrationIdMapRepository.save(
-                        migration
-                );
+                        newUserId.toString()
+                ));
             }
         }
     }
 
-    private Users buildNewUser(
+    private Users buildUser(
             List<UsuarioLegacy> group,
             UsuarioLegacy principal,
-            String normalizedEmail
+            String email,
+            Map<Long, List<Instant>> activityDates
     ) {
         String fullName = normalizeName(principal.getName());
-
         String[] nameParts = fullName.split(" ", 2);
-        String firstName = nameParts[0];
-        String lastName = nameParts.length > 1 ? nameParts[1] : null;
-
-        String role = highestRole(group);
-        String status = groupHasActiveValidEmail(group)
-                ? "active"
-                : "inactive";
-
-        String phone = firstValidPhone(group);
-        Long departmentId = firstMappedDepartment(group);
 
         Users user = new Users();
-        user.setFirstName(firstName);
-        user.setLastName(lastName);
-        user.setEmail(normalizedEmail);
-        user.setPhone(phone);
-        user.setDepartmentId(departmentId);
-        user.setRole(role);
-        user.setStatus(status);
+        user.setFirstName(nameParts[0]);
+        user.setLastName(nameParts.length > 1 ? nameParts[1] : null);
+        user.setEmail(email);
+        user.setPhone(firstValidPhone(group));
+        user.setDepartmentId(firstMappedDepartment(group));
+        user.setRole(highestRole(group));
+        user.setStatus(groupHasActiveValidEmail(group) ? "active" : "inactive");
         user.setPasswordHash(null);
         user.setMustResetPassword(true);
-
-        // TODO: calcular createdAt pela regra de cadastro + atividades migradas.
-        // Não inventar a data aqui; por enquanto ela fica sem valor.
-        user.setCreatedAt(null);
-
-
-        user.setUpdatedAt(java.time.Instant.now());
-
-        // Identifica o registro principal do grupo.
+        user.setCreatedAt(calculateCreatedAt(group, activityDates));
+        user.setUpdatedAt(Instant.now());
         user.setLegacyId(principal.getCdUsuario());
 
         return user;
     }
 
-    private String highestRole(List<UsuarioLegacy> group) {
-        return group.stream()
-                .map(user -> normalizeRole(user.getTpPerfil()))
-                .max(Comparator.comparingInt(this::rolePriority))
-                .orElse("requester");
+    private Map<Long, List<Instant>> loadActivityDates() {
+        Map<Long, List<Instant>> dates = new HashMap<>();
+
+        chamadoLegacyRepository.findUserActivityDates()
+                .forEach(activity -> addActivityDate(dates, activity));
+
+        interacaoLegacyRepository.findUserActivityDates()
+                .forEach(activity -> addActivityDate(dates, activity));
+
+        return dates;
     }
 
-    private int rolePriority(String role) {
-        return switch (role) {
-            case "admin" -> 3;
-            case "agent" -> 2;
-            default -> 1; // requester
-        };
+    private void addActivityDate(
+            Map<Long, List<Instant>> dates,
+            UserActivityDateLegacy activity
+    ) {
+        dates.computeIfAbsent(activity.userId(), id -> new ArrayList<>())
+                .add(activity.activityAt());
     }
 
-    private boolean groupHasActiveValidEmail(List<UsuarioLegacy> group) {
-        return group.stream().anyMatch(user -> {
-            String email = user.getDsEmail() == null
-                    ? ""
-                    : user.getDsEmail().trim().toLowerCase(Locale.ROOT);
-
-            boolean validEmail = !email.isBlank()
-                    && EMAIL_PATTERN.matcher(email).matches();
-
-            boolean active = !"N".equalsIgnoreCase(
-                    user.getFlAtivo() == null
-                            ? ""
-                            : user.getFlAtivo().trim()
-            );
-
-            return validEmail && active;
-        });
-    }
-
-    private String firstValidPhone(List<UsuarioLegacy> group) {
-        return group.stream()
-                .map(user -> normalizePhone(user.getNrTelefone()))
-                .filter(Objects::nonNull)
-                .findFirst()
-                .orElse(null);
-    }
-
-    private Long firstMappedDepartment(List<UsuarioLegacy> group) {
+    private Instant calculateCreatedAt(
+            List<UsuarioLegacy> group,
+            Map<Long, List<Instant>> activityDates
+    ) {
+        List<Instant> dates = new ArrayList<>();
 
         for (UsuarioLegacy user : group) {
-            Long legacyDepartmentId = user.getCdUsuario();
+            Instant registrationDate = parseRegistrationDate(user.getDtCadastro());
 
-            if (legacyDepartmentId == null) {
-                continue;
+            if (registrationDate != null) {
+                dates.add(registrationDate);
             }
 
-            Optional<Long> newDepartmentId =
-                    migrationIdMapRepository.findDepartmentNewId(
-                            "departments",
-                            legacyDepartmentId
-                    );
+            List<Instant> userActivities =
+                    activityDates.get(user.getCdUsuario().longValue());
 
-            if (newDepartmentId.isPresent()) {
-                return newDepartmentId.get();
+            if (userActivities != null) {
+                dates.addAll(userActivities);
+            }
+        }
+
+        return dates.stream()
+                .min(Comparator.naturalOrder())
+                .orElseGet(() -> LocalDate.of(2010, 1, 4)
+                        .atStartOfDay(LEGACY_ZONE)
+                        .toInstant());
+    }
+
+    private Instant parseRegistrationDate(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+
+        for (DateTimeFormatter formatter : List.of(
+                DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+                DateTimeFormatter.ISO_LOCAL_DATE
+        )) {
+            try {
+                return LocalDate.parse(value.trim(), formatter)
+                        .atStartOfDay(LEGACY_ZONE)
+                        .toInstant();
+            } catch (DateTimeParseException ignored) {
+                // Tenta o próximo formato previsto.
             }
         }
 
         return null;
     }
 
-
-    private static final Pattern EMAIL_PATTERN = Pattern.compile(
-            "^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,}$"
-    );
-
-
     private String normalizeEmail(String email, Long legacyId) {
         String normalized = email == null
                 ? ""
                 : email.trim().toLowerCase(Locale.ROOT);
 
-        if (normalized.isBlank()
-                || !EMAIL_PATTERN.matcher(normalized).matches()) {
-            return "legado-" + legacyId + "@migracao.invalid";
-        }
-
-        return normalized;
+        return normalized.isBlank() || !EMAIL_PATTERN.matcher(normalized).matches()
+                ? "legado-" + legacyId + "@migracao.invalid"
+                : normalized;
     }
 
     private boolean isTestAccount(String email) {
         return email != null
-                && email.trim().toLowerCase(Locale.ROOT)
-                .endsWith("@teste.com");
+                && email.trim().toLowerCase(Locale.ROOT).endsWith("@teste.com");
     }
-
 
     private String normalizeName(String name) {
         if (name == null || name.isBlank()) {
@@ -215,20 +214,17 @@ public class UsersMigrationService {
 
         for (int i = 0; i < words.length; i++) {
             String word = words[i];
+            boolean particle = i > 0 && Set.of(
+                    "da", "de", "do", "das", "dos", "e"
+            ).contains(word);
 
-            boolean particle = i > 0 && (
-                    word.equals("da") || word.equals("de")
-                            || word.equals("do") || word.equals("das")
-                            || word.equals("dos") || word.equals("e")
-            );
-
-            if (!particle && !word.isEmpty()) {
+            if (!particle) {
                 word = word.substring(0, 1).toUpperCase(Locale.ROOT)
                         + word.substring(1);
             }
 
             if (i > 0) {
-                result.append(" ");
+                result.append(' ');
             }
 
             result.append(word);
@@ -236,7 +232,6 @@ public class UsersMigrationService {
 
         return result.toString();
     }
-
 
     private String normalizePhone(String phone) {
         if (phone == null || phone.isBlank()) {
@@ -252,21 +247,54 @@ public class UsersMigrationService {
             digits = digits.substring(1);
         }
 
-        boolean validLength = digits.length() == 10
-                || digits.length() == 11;
-
+        boolean validLength = digits.length() == 10 || digits.length() == 11;
         boolean validDdd = digits.length() >= 2
                 && digits.charAt(0) != '0'
                 && digits.charAt(1) != '0';
-
         boolean validMobile = digits.length() != 11
                 || digits.charAt(2) == '9';
 
-        if (!validLength || !validDdd || !validMobile) {
-            return null;
-        }
+        return validLength && validDdd && validMobile
+                ? "+55" + digits
+                : null;
+    }
 
-        return "+55" + digits;
+    private String firstValidPhone(List<UsuarioLegacy> group) {
+        return group.stream()
+                .sorted(Comparator.comparing(UsuarioLegacy::getCdUsuario))
+                .map(user -> normalizePhone(user.getNrTelefone()))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private Long firstMappedDepartment(List<UsuarioLegacy> group) {
+        return group.stream()
+                .sorted(Comparator.comparing(UsuarioLegacy::getCdUsuario))
+                .map(UsuarioLegacy::getCdSetor)
+                .filter(Objects::nonNull)
+                .map(id -> migrationIdMapRepository.findDepartmentNewId(
+                        "departments", id.longValue()
+                ))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private String highestRole(List<UsuarioLegacy> group) {
+        return group.stream()
+                .map(user -> normalizeRole(user.getTpPerfil()))
+                .max(Comparator.comparingInt(this::rolePriority))
+                .orElse("requester");
+    }
+
+    private int rolePriority(String role) {
+        return switch (role) {
+            case "admin" -> 3;
+            case "agent" -> 2;
+            default -> 1;
+        };
     }
 
     private String normalizeRole(String profile) {
@@ -282,31 +310,18 @@ public class UsersMigrationService {
         };
     }
 
+    private boolean groupHasActiveValidEmail(List<UsuarioLegacy> group) {
+        return group.stream().anyMatch(user -> {
+            String email = user.getDsEmail() == null
+                    ? ""
+                    : user.getDsEmail().trim().toLowerCase(Locale.ROOT);
 
-    private String normalizeStatus(String activeFlag, String email) {
-        String normalizedEmail = email == null
-                ? ""
-                : email.trim().toLowerCase(Locale.ROOT);
+            boolean validEmail = EMAIL_PATTERN.matcher(email).matches();
+            boolean active = !"N".equalsIgnoreCase(
+                    user.getFlAtivo() == null ? "" : user.getFlAtivo().trim()
+            );
 
-        boolean invalidEmail = normalizedEmail.isBlank()
-                || !EMAIL_PATTERN.matcher(normalizedEmail).matches();
-
-        if (invalidEmail || "N".equalsIgnoreCase(
-                activeFlag == null ? "" : activeFlag.trim())) {
-            return "inactive";
-        }
-
-        return "active";
+            return validEmail && active;
+        });
     }
-
-
-
-    private String migratedPasswordHash() {
-        return null;
-    }
-
-    private boolean mustResetPassword() {
-        return true;
-    }
-
 }

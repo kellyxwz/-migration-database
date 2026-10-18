@@ -1,10 +1,11 @@
 package com.db.migration.repository.legacy;
 
 import com.db.migration.model.legacy.ChamadoLegacy;
+import com.db.migration.model.legacy.UserActivityDateLegacy;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.sql.Timestamp;
+import javax.sql.DataSource;
 import java.util.List;
 
 @Repository
@@ -12,8 +13,25 @@ public class ChamadoLegacyRepository {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public ChamadoLegacyRepository(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    public ChamadoLegacyRepository(DataSource legacyDataSource) {
+        this.jdbcTemplate = new JdbcTemplate(legacyDataSource);
+    }
+
+
+    public List<UserActivityDateLegacy> findUserActivityDates() {
+        String sql = """
+            SELECT cd_solicitante, dt_abertura
+            FROM tb_chamado
+            WHERE cd_solicitante IS NOT NULL
+              AND dt_abertura IS NOT NULL
+            """;
+
+        return jdbcTemplate.query(sql, (rs, rowNum) ->
+                new UserActivityDateLegacy(
+                        rs.getLong("cd_solicitante"),
+                        rs.getTimestamp("dt_abertura").toInstant()
+                )
+        );
     }
 
     public List<ChamadoLegacy> findAll(){
@@ -26,7 +44,7 @@ public class ChamadoLegacyRepository {
                 FROM  tb_chamado
                 """;
 
-            return jdbcTemplate.query(sql, (rs, rowNum) ->
+        return jdbcTemplate.query(sql, (rs, rowNum) ->
                     new ChamadoLegacy(
                             rs.getLong("nr_chamado"),
                             rs.getString("ds_titulo"),
@@ -48,7 +66,8 @@ public class ChamadoLegacyRepository {
                             rs.getString("fl_sla_estourado"),
                             rs.getString("ds_tags")
                     )
-            );
+        );
+
 
     }
 }
