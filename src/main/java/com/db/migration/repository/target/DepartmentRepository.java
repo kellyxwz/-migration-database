@@ -14,15 +14,12 @@ public class DepartmentRepository {
 
     private final JdbcTemplate jdbcTemplate;
 
-    //aqui ele diz ao intellij que iremos usar o banco novo nessa classe
     public DepartmentRepository(@Qualifier("newDataSource") DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
-    //metodo save q retorna o id da entidade salva
     public Long save(Department department) {
 
-        //aqui fazemos a query q insere no banco as novas entidades
         String sql = """
                 INSERT INTO departments (name, is_active, legacy_id, created_at)
                 VALUES (?, ?, ?, ?)

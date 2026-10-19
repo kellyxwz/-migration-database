@@ -75,7 +75,7 @@ public class MigrationIdMapRepository {
         String sql = """
             SELECT new_id
             FROM migration_id_map
-            WHERE entity = 'departments'
+            WHERE entity = 'department'
               AND legacy_id = ?
             """;
 

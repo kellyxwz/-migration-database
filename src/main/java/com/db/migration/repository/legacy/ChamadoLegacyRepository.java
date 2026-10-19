@@ -6,6 +6,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
 @Repository
@@ -20,18 +23,24 @@ public class ChamadoLegacyRepository {
 
     public List<UserActivityDateLegacy> findUserActivityDates() {
         String sql = """
-            SELECT cd_solicitante, dt_abertura
-            FROM tb_chamado
-            WHERE cd_solicitante IS NOT NULL
-              AND dt_abertura IS NOT NULL
-            """;
+        SELECT cd_solicitante, dt_abertura
+        FROM tb_chamado
+        WHERE cd_solicitante IS NOT NULL
+          AND dt_abertura IS NOT NULL
+        """;
 
-        return jdbcTemplate.query(sql, (rs, rowNum) ->
-                new UserActivityDateLegacy(
-                        rs.getLong("cd_solicitante"),
-                        rs.getTimestamp("dt_abertura").toInstant()
-                )
-        );
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            LocalDate data = rs.getObject("dt_abertura", LocalDate.class);
+
+            Instant activityAt = data
+                    .atStartOfDay(ZoneId.of("America/Sao_Paulo"))
+                    .toInstant();
+
+            return new UserActivityDateLegacy(
+                    rs.getLong("cd_solicitante"),
+                    activityAt
+            );
+        });
     }
 
     public List<ChamadoLegacy> findAll(){

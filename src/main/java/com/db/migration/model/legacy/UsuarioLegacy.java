@@ -15,7 +15,7 @@ public class UsuarioLegacy {
     private String name;
     private String dsEmail;
     private String nrTelefone;
-    private Integer cdSetor;
+    private Long cdSetor;
     private String tpPerfil;
     private String dsSenha;
     private String dtCadastro;

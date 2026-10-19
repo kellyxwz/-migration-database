@@ -18,8 +18,8 @@ public class MigrationRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        usersMigrationService.migrateUsers();
         departmentMigrationService.migrate();
+        usersMigrationService.migrateUsers();
     }
 
 }

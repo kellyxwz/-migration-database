@@ -274,7 +274,7 @@ public class UsersMigrationService {
                 .map(UsuarioLegacy::getCdSetor)
                 .filter(Objects::nonNull)
                 .map(id -> migrationIdMapRepository.findDepartmentNewId(
-                        "departments", id.longValue()
+                        "department", id.longValue()
                 ))
                 .filter(Optional::isPresent)
                 .map(Optional::get)

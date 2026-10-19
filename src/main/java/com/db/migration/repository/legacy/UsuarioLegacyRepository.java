@@ -29,7 +29,7 @@ public class UsuarioLegacyRepository {
                                 rs.getString("nm_usuario"),
                                 rs.getString("ds_email"),
                                 rs.getString("nr_telefone"),
-                                rs.getInt("cd_setor"),
+                                rs.getLong("cd_setor"),
                                 rs.getString("tp_perfil"),
                                 rs.getString("ds_senha"),
                                 rs.getString("dt_cadastro"),
