@@ -14,6 +14,7 @@ public class CategoriaLegacy {
     private Long cdCategoria;
     private String dcCategoria;
     private Long cdCategoriaPai;
+    private Long nrSlaHoras;
     private String flAtivo;
 
 }
