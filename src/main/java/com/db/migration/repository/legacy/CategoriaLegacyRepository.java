@@ -12,15 +12,15 @@ public class CategoriaLegacyRepository {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public CategoriaLegacyRepository(DataSource legacyDatasource) {
-        this.jdbcTemplate = new JdbcTemplate(legacyDatasource);
+    public CategoriaLegacyRepository(DataSource legacyDataSource) {
+        this.jdbcTemplate = new JdbcTemplate(legacyDataSource);
     }
 
-    List<CategoriaLegacy> findAll() {
+    public List<CategoriaLegacy> findAll() {
 
         String sql = """
                 SELECT cd_categoria, ds_categoria, cd_categoria_pai,
-                nr_sla_horas, fl_ativo, dt_cadastro
+                nr_sla_horas, fl_ativo
                 FROM tb_categoria
                 """;
 

@@ -16,7 +16,7 @@ public class MigrationIssues {
     private Long id;
     private String entity;
     private Long legacyId;
-    private String severite;
+    private String severity;
     private String code;
     private String message;
     private Instant createdAt;

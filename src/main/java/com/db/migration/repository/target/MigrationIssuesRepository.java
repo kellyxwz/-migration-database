@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
+import java.sql.Timestamp;
 
 @Repository
 public class MigrationIssuesRepository {
@@ -21,18 +22,18 @@ public class MigrationIssuesRepository {
 
         String sql = """
             INSERT INTO migration_issues(
-            entity, legacy_id, severite, code, message, created_At)
-            VALUES(?, ?, ?, ?, ?, ?)
+            entity, legacy_id, severity, code, message, created_At)
+            VALUES(?, ?, ?::issue_severity, ?, ?, ?)
             """;
 
         jdbcTemplate.update(
                 sql,
                 migrationIssues.getEntity(),
                 migrationIssues.getLegacyId(),
-                migrationIssues.getSeverite(),
+                migrationIssues.getSeverity(),
                 migrationIssues.getCode(),
                 migrationIssues.getMessage(),
-                migrationIssues.getCreatedAt()
+                Timestamp.from(migrationIssues.getCreatedAt())
                 );
 
     }
