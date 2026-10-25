@@ -87,4 +87,19 @@ public class MigrationIdMapRepository {
                 legacyId
         );
     }
+
+    public UUID findByLegacyId(Long legacyId) {
+        String sql = """
+        SELECT id
+        FROM tickets
+        WHERE legacy_id = ?
+        """;
+
+        return jdbcTemplate.queryForObject(
+                sql,
+                UUID.class,
+                legacyId
+        );
+    }
+
 }
