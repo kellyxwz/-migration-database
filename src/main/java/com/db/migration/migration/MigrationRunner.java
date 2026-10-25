@@ -1,9 +1,6 @@
 package com.db.migration.migration;
 
-import com.db.migration.service.migration.CategoriesMigrationService;
-import com.db.migration.service.migration.DepartmentMigrationService;
-import com.db.migration.service.migration.TicketsMigrationService;
-import com.db.migration.service.migration.UsersMigrationService;
+import com.db.migration.service.migration.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -15,15 +12,16 @@ public class MigrationRunner implements CommandLineRunner {
     private final DepartmentMigrationService departmentMigrationService;
     private final CategoriesMigrationService categoriesMigrationService;
     private final TicketsMigrationService ticketsMigrationService;
+    private final TicketCommentsMigrationService ticketCommentsMigrationService;
 
 
-
-    public MigrationRunner(TruncateDatabase truncateDatabase, UsersMigrationService usersMigrationService, DepartmentMigrationService departmentMigrationService, CategoriesMigrationService categoriesMigrationService, TicketsMigrationService ticketsMigrationService) {
+    public MigrationRunner(TruncateDatabase truncateDatabase, UsersMigrationService usersMigrationService, DepartmentMigrationService departmentMigrationService, CategoriesMigrationService categoriesMigrationService, TicketsMigrationService ticketsMigrationService, TicketCommentsMigrationService ticketCommentsMigrationService) {
         this.truncateDatabase = truncateDatabase;
         this.usersMigrationService = usersMigrationService;
         this.departmentMigrationService = departmentMigrationService;
         this.categoriesMigrationService = categoriesMigrationService;
         this.ticketsMigrationService = ticketsMigrationService;
+        this.ticketCommentsMigrationService = ticketCommentsMigrationService;
     }
 
     @Override
@@ -33,6 +31,7 @@ public class MigrationRunner implements CommandLineRunner {
         usersMigrationService.migrateUsers();
         categoriesMigrationService.migrate();
         ticketsMigrationService.migrate();
+        ticketCommentsMigrationService.migrate();
     }
 
 }

@@ -29,7 +29,7 @@ public class TicketsCommentRepository {
                 created_at,
                 legacy_id
             )
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?::comment_visibility, ?, ?)
             RETURNING id
             """;
 
