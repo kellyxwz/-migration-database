@@ -54,4 +54,27 @@ public class InteracaoLegacyRepository {
         );
     }
 
+    public List<InteracaoLegacy> findPublicResponses() {
+        String sql = """
+        SELECT i.cd_interacao, i.nr_chamado, i.cd_usuario,
+               i.ds_interacao, i.dt_interacao, i.fl_interno
+        FROM tb_interacao i
+        JOIN tb_usuario u ON u.cd_usuario = i.cd_usuario
+        WHERE i.dt_interacao IS NOT NULL
+          AND (i.fl_interno = 'N' OR i.fl_interno IS NULL)
+          AND u.tp_perfil IN ('A', 'T')
+        ORDER BY i.nr_chamado, i.dt_interacao, i.cd_interacao
+        """;
+
+        return jdbcTemplate.query(sql, (rs, rowNum) ->
+                new InteracaoLegacy(
+                        rs.getLong("cd_interacao"),
+                        rs.getLong("nr_chamado"),
+                        rs.getLong("cd_usuario"),
+                        rs.getString("ds_interacao"),
+                        rs.getTimestamp("dt_interacao").toInstant(),
+                        rs.getString("fl_interno")
+                )
+        );
+    }
 }

@@ -45,6 +45,7 @@ public class MigrationIssuesRepository {
                 FROM migration_issues
                 WHERE entity = ?
                 AND legacy_id = ?
+                )
                 """;
 
         return  Boolean.TRUE.equals(
