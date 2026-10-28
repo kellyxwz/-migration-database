@@ -196,7 +196,7 @@ public class TicketsMigrationService {
             return null;
         }
         return UUID.fromString(
-                mapRepo.findNewId(entity, legacyId).toString());
+                mapRepo.findNewId(entity, legacyId, UUID.class).toString());
     }
 
     private Long mappedLong(String entity, Long legacyId) {
@@ -204,7 +204,7 @@ public class TicketsMigrationService {
             return null;
         }
         return Long.valueOf(
-                mapRepo.findNewId(entity, legacyId).toString());
+                mapRepo.findNewId(entity, legacyId, UUID.class).toString());
     }
 
     private Long mappedLongByName(String name) {

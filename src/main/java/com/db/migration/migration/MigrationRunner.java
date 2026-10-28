@@ -13,15 +13,16 @@ public class MigrationRunner implements CommandLineRunner {
     private final CategoriesMigrationService categoriesMigrationService;
     private final TicketsMigrationService ticketsMigrationService;
     private final TicketCommentsMigrationService ticketCommentsMigrationService;
+    private final TicketStatusHistoryMigrationService ticketStatusHistoryMigrationService;
 
-
-    public MigrationRunner(TruncateDatabase truncateDatabase, UsersMigrationService usersMigrationService, DepartmentMigrationService departmentMigrationService, CategoriesMigrationService categoriesMigrationService, TicketsMigrationService ticketsMigrationService, TicketCommentsMigrationService ticketCommentsMigrationService) {
+    public MigrationRunner(TruncateDatabase truncateDatabase, UsersMigrationService usersMigrationService, DepartmentMigrationService departmentMigrationService, CategoriesMigrationService categoriesMigrationService, TicketsMigrationService ticketsMigrationService, TicketCommentsMigrationService ticketCommentsMigrationService, TicketStatusHistoryMigrationService ticketStatusHistoryMigrationService) {
         this.truncateDatabase = truncateDatabase;
         this.usersMigrationService = usersMigrationService;
         this.departmentMigrationService = departmentMigrationService;
         this.categoriesMigrationService = categoriesMigrationService;
         this.ticketsMigrationService = ticketsMigrationService;
         this.ticketCommentsMigrationService = ticketCommentsMigrationService;
+        this.ticketStatusHistoryMigrationService = ticketStatusHistoryMigrationService;
     }
 
     @Override
@@ -32,6 +33,8 @@ public class MigrationRunner implements CommandLineRunner {
         categoriesMigrationService.migrate();
         ticketsMigrationService.migrate();
         ticketCommentsMigrationService.migrate();
+        System.out.println("Starting ticket status history migration...");
+        ticketStatusHistoryMigrationService.migrate();
     }
 
 }

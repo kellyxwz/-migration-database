@@ -33,7 +33,7 @@ public class MigrationIdMapRepository {
         );
     }
 
-    public Object findNewId(String entity, Long legacyId) {
+    public Object findNewId(String entity, Long legacyId, Class<UUID> uuidClass) {
         String sql = """
             SELECT new_id
             FROM migration_id_map

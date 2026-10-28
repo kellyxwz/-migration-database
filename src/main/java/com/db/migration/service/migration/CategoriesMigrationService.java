@@ -135,7 +135,7 @@ public class CategoriesMigrationService {
 
     private Long mappedId(Long legacyId) {
         return Long.valueOf(
-                mapRepo.findNewId("category", legacyId).toString()
+                mapRepo.findNewId("category", legacyId, UUID.class).toString()
         );
     }
 

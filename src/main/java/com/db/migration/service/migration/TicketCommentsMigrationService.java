@@ -81,7 +81,7 @@ public class TicketCommentsMigrationService {
             return null;
         }
 
-        Object id = mapRepo.findNewId(entity, legacyId);
+        Object id = mapRepo.findNewId(entity, legacyId, UUID.class);
 
         return id != null ? UUID.fromString(id.toString()) : null;
     }

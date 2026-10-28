@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
+import java.sql.Timestamp;
 
 @Repository
 public class TicketStatusHistoryRepository {
@@ -19,16 +20,17 @@ public class TicketStatusHistoryRepository {
 
     public Long save(TicketStatusHistory history) {
         String sql = """
-            INSERT INTO ticket_status_history (
-                ticket_id,
-                from_status,
-                to_status,
-                changed_by,
-                legacy_interaction_id
-            )
-            VALUES (?, ?::ticket_status, ?::ticket_status, ?, ?)
-            RETURNING id
-            """;
+        INSERT INTO ticket_status_history (
+            ticket_id,
+            from_status,
+            to_status,
+            changed_by,
+            changed_at,
+            legacy_interaction_id
+        )
+        VALUES (?, ?::ticket_status, ?::ticket_status, ?, ?, ?)
+        RETURNING id
+        """;
 
         return jdbcTemplate.queryForObject(
                 sql,
@@ -37,6 +39,9 @@ public class TicketStatusHistoryRepository {
                 history.getFromStatus(),
                 history.getToStatus(),
                 history.getChangedBy(),
+                history.getChangedAt() != null
+                        ? Timestamp.from(history.getChangedAt())
+                        : null,
                 history.getLegacyInteractionId()
         );
     }
