@@ -14,8 +14,9 @@ public class MigrationRunner implements CommandLineRunner {
     private final TicketsMigrationService ticketsMigrationService;
     private final TicketCommentsMigrationService ticketCommentsMigrationService;
     private final TicketStatusHistoryMigrationService ticketStatusHistoryMigrationService;
+    private final TicketTagsMigrationService ticketTagsMigrationService;
 
-    public MigrationRunner(TruncateDatabase truncateDatabase, UsersMigrationService usersMigrationService, DepartmentMigrationService departmentMigrationService, CategoriesMigrationService categoriesMigrationService, TicketsMigrationService ticketsMigrationService, TicketCommentsMigrationService ticketCommentsMigrationService, TicketStatusHistoryMigrationService ticketStatusHistoryMigrationService) {
+    public MigrationRunner(TruncateDatabase truncateDatabase, UsersMigrationService usersMigrationService, DepartmentMigrationService departmentMigrationService, CategoriesMigrationService categoriesMigrationService, TicketsMigrationService ticketsMigrationService, TicketCommentsMigrationService ticketCommentsMigrationService, TicketStatusHistoryMigrationService ticketStatusHistoryMigrationService, TicketTagsMigrationService ticketTagsMigrationService) {
         this.truncateDatabase = truncateDatabase;
         this.usersMigrationService = usersMigrationService;
         this.departmentMigrationService = departmentMigrationService;
@@ -23,6 +24,7 @@ public class MigrationRunner implements CommandLineRunner {
         this.ticketsMigrationService = ticketsMigrationService;
         this.ticketCommentsMigrationService = ticketCommentsMigrationService;
         this.ticketStatusHistoryMigrationService = ticketStatusHistoryMigrationService;
+        this.ticketTagsMigrationService = ticketTagsMigrationService;
     }
 
     @Override
@@ -35,6 +37,8 @@ public class MigrationRunner implements CommandLineRunner {
         ticketCommentsMigrationService.migrate();
         System.out.println("Starting ticket status history migration...");
         ticketStatusHistoryMigrationService.migrate();
+        System.out.println("Starting ticket tags migration...");
+        ticketTagsMigrationService.migrate();
     }
 
 }

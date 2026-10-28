@@ -102,4 +102,22 @@ public class MigrationIdMapRepository {
         );
     }
 
+    public UUID findMappedUuid(String entity, Long legacyId) {
+        String sql = """
+            SELECT new_id
+            FROM migration_id_map
+            WHERE entity = ?
+              AND legacy_id = ?
+            """;
+
+        return jdbcTemplate.query(
+                sql,
+                rs -> rs.next()
+                        ? UUID.fromString(rs.getString("new_id"))
+                        : null,
+                entity,
+                legacyId
+        );
+    }
+
 }
