@@ -11,11 +11,11 @@ import lombok.Setter;
 @AllArgsConstructor
 public class UsuarioLegacy {
 
-    private Integer cdUsuario;
+    private Long cdUsuario;
     private String name;
     private String dsEmail;
     private String nrTelefone;
-    private Integer cdSetor;
+    private Long cdSetor;
     private String tpPerfil;
     private String dsSenha;
     private String dtCadastro;

@@ -23,7 +23,7 @@ public class SetorLegacyRepository {
 
         return jdbcTemplate.query(sql, (rs, rowNum) ->
                 new SetorLegacy(
-                        rs.getInt("cd_setor"),
+                        rs.getLong("cd_setor"),
                         rs.getString("nm_setor"),
                         rs.getString("fl_ativo")
                 )

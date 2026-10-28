@@ -1,12 +1,13 @@
 package com.db.migration.repository.target;
 
-import com.db.migration.service.migration.MigrationIdMap;
+import com.db.migration.model.target.MigrationIdMap;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
-import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public class MigrationIdMapRepository {
@@ -32,6 +33,22 @@ public class MigrationIdMapRepository {
         );
     }
 
+    public Object findNewId(String entity, Long legacyId, Class<UUID> uuidClass) {
+        String sql = """
+            SELECT new_id
+            FROM migration_id_map
+            WHERE entity = ?
+              AND legacy_id = ?
+            """;
+
+        return jdbcTemplate.queryForObject(
+                sql,
+                Object.class,
+                entity,
+                legacyId
+        );
+    }
+
     public boolean exists(String entity, Long legacyId) {
 
         String sql = """
@@ -53,5 +70,54 @@ public class MigrationIdMapRepository {
         );
     }
 
+
+    public Optional<Long> findDepartmentNewId( String entity,Long legacyId) {
+        String sql = """
+            SELECT new_id
+            FROM migration_id_map
+            WHERE entity = 'department'
+              AND legacy_id = ?
+            """;
+
+        return jdbcTemplate.query(
+                sql,
+                rs -> rs.next()
+                        ? Optional.of(rs.getLong("new_id"))
+                        : Optional.empty(),
+                legacyId
+        );
+    }
+
+    public UUID findByLegacyId(Long legacyId) {
+        String sql = """
+        SELECT id
+        FROM tickets
+        WHERE legacy_id = ?
+        """;
+
+        return jdbcTemplate.queryForObject(
+                sql,
+                UUID.class,
+                legacyId
+        );
+    }
+
+    public UUID findMappedUuid(String entity, Long legacyId) {
+        String sql = """
+            SELECT new_id
+            FROM migration_id_map
+            WHERE entity = ?
+              AND legacy_id = ?
+            """;
+
+        return jdbcTemplate.query(
+                sql,
+                rs -> rs.next()
+                        ? UUID.fromString(rs.getString("new_id"))
+                        : null,
+                entity,
+                legacyId
+        );
+    }
 
 }

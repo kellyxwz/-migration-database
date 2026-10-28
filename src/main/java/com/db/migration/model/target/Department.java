@@ -16,10 +16,10 @@ public class Department {
     private Long id;
     private String name;
     private boolean isActive;
-    private Integer legacyId;
+    private Long legacyId;
     private Instant  createdAt;
 
-    public Department(String name, boolean isActive, Integer legacyId, Instant createdAt) {
+    public Department(String name, boolean isActive, Long legacyId, Instant createdAt) {
         this.name = name;
         this.isActive = isActive;
         this.legacyId = legacyId;
