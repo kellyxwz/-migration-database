@@ -14,9 +14,10 @@ public class MigrationRunner implements CommandLineRunner {
     private final TicketsMigrationService ticketsMigrationService;
     private final TicketCommentsMigrationService ticketCommentsMigrationService;
     private final TicketStatusHistoryMigrationService ticketStatusHistoryMigrationService;
+    private final TagsMigrationService tagsMigrationService;
     private final TicketTagsMigrationService ticketTagsMigrationService;
 
-    public MigrationRunner(TruncateDatabase truncateDatabase, UsersMigrationService usersMigrationService, DepartmentMigrationService departmentMigrationService, CategoriesMigrationService categoriesMigrationService, TicketsMigrationService ticketsMigrationService, TicketCommentsMigrationService ticketCommentsMigrationService, TicketStatusHistoryMigrationService ticketStatusHistoryMigrationService, TicketTagsMigrationService ticketTagsMigrationService) {
+    public MigrationRunner(TruncateDatabase truncateDatabase, UsersMigrationService usersMigrationService, DepartmentMigrationService departmentMigrationService, CategoriesMigrationService categoriesMigrationService, TicketsMigrationService ticketsMigrationService, TicketCommentsMigrationService ticketCommentsMigrationService, TicketStatusHistoryMigrationService ticketStatusHistoryMigrationService, TagsMigrationService tagsMigrationService, TicketTagsMigrationService ticketTagsMigrationService) {
         this.truncateDatabase = truncateDatabase;
         this.usersMigrationService = usersMigrationService;
         this.departmentMigrationService = departmentMigrationService;
@@ -24,6 +25,7 @@ public class MigrationRunner implements CommandLineRunner {
         this.ticketsMigrationService = ticketsMigrationService;
         this.ticketCommentsMigrationService = ticketCommentsMigrationService;
         this.ticketStatusHistoryMigrationService = ticketStatusHistoryMigrationService;
+        this.tagsMigrationService = tagsMigrationService;
         this.ticketTagsMigrationService = ticketTagsMigrationService;
     }
 
@@ -37,6 +39,8 @@ public class MigrationRunner implements CommandLineRunner {
         ticketCommentsMigrationService.migrate();
         System.out.println("Starting ticket status history migration...");
         ticketStatusHistoryMigrationService.migrate();
+        System.out.println("Starting tags migration...");
+        tagsMigrationService.migrate();
         System.out.println("Starting ticket tags migration...");
         ticketTagsMigrationService.migrate();
     }

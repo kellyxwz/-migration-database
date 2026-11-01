@@ -5,6 +5,9 @@ import com.db.migration.repository.legacy.ChamadoLegacyRepository;
 import com.db.migration.repository.target.TagsRepository;
 import org.springframework.stereotype.Service;
 
+import java.text.Normalizer;
+import java.util.Locale;
+
 @Service
 public class TagsMigrationService {
 
@@ -28,8 +31,8 @@ public class TagsMigrationService {
                 continue;
             }
 
-            for (String nome : tags.split(",")) {
-                nome = nome.trim();
+            for (String nome : tags.split("[,;]")) {
+                nome = normalize(nome);
 
                 if (nome.isBlank()) {
                     continue;
@@ -37,9 +40,16 @@ public class TagsMigrationService {
 
                 if (tagsRepo.findIdByName(nome) == null) {
                     tagsRepo.save(new Tag(null, nome));
-                    System.out.println("Tag criada: " + nome);
                 }
             }
         }
+    }
+
+    private String normalize(String nome) {
+        return Normalizer.normalize(nome.trim(), Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("^-|-$", "");
     }
 }
