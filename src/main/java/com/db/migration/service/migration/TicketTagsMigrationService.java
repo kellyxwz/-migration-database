@@ -8,7 +8,10 @@ import com.db.migration.repository.target.TagsRepository;
 import com.db.migration.repository.target.TicketTagsRepository;
 import org.springframework.stereotype.Service;
 
+import java.text.Normalizer;
+import java.util.Locale;
 import java.util.UUID;
+
 
 @Service
 public class TicketTagsMigrationService {
@@ -31,7 +34,6 @@ public class TicketTagsMigrationService {
 
     public void migrate() {
         var chamados = chamadoRepo.findAll();
-        System.out.println("Total de chamados: " + chamados.size());
 
         for (ChamadoLegacy chamado : chamados) {
             String tags = chamado.getDsTags();
@@ -40,20 +42,16 @@ public class TicketTagsMigrationService {
                 continue;
             }
 
-            System.out.println("Chamado: " + chamado.getNrChamado());
-            System.out.println("Tags legadas: " + tags);
-
             UUID ticketId = mapRepo.findMappedUuid(
                     "ticket", chamado.getNrChamado()
             );
 
             if (ticketId == null) {
-                System.out.println("Ticket sem mapeamento");
                 continue;
             }
 
-            for (String nome : tags.split(",")) {
-                nome = nome.trim();
+            for (String nome : tags.split("[,;]")) {
+                nome = normalize(nome);
 
                 if (nome.isBlank()) {
                     continue;
@@ -62,14 +60,19 @@ public class TicketTagsMigrationService {
                 Long tagId = tagsRepo.findIdByName(nome);
 
                 if (tagId == null) {
-                    System.out.println("Tag não encontrada: " + nome);
                     continue;
                 }
 
                 ticketTagsRepo.save(new TicketTags(ticketId, tagId));
-                System.out.println("Relacionamento salvo: " + nome);
             }
         }
     }
 
+    private String normalize(String nome) {
+        return Normalizer.normalize(nome.trim(), Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("^-|-$", "");
+    }
 }
