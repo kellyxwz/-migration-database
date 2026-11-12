@@ -1,88 +1,193 @@
-Migration Project (Legacy MySQL to PostgreSQL 2.0)
+# Migração de Banco de Dados — MySQL para PostgreSQL
 
-Este projeto consiste num programa de migração de dados desenvolvido em Java com Spring Boot, projetado para migrar o sistema interno de chamados de TI legado (HelpDesk v1 - MySQL 5.5) para o novo ecossistema moderno (HelpDesk 2.0 - PostgreSQL 16), cumprindo rigorosas regras de negócio, tratamento de inconsistências e idempotência.
+Projeto de migração de dados de um sistema legado de HelpDesk, desenvolvido com **Java e Spring Boot**, realizando a transferência e transformação de dados de um banco MySQL para uma nova estrutura em PostgreSQL.
 
-🛠️ Tecnologias Utilizadas
+O objetivo foi trabalhar com um cenário próximo de uma migração real, considerando diferenças entre os bancos, mudanças no modelo de dados, integridade referencial e regras de negócio.
 
-Java 17+
+## Sobre o projeto
 
-Spring Boot (Spring JDBC, DataSource Múltiplo)
+O sistema legado armazenava os dados em MySQL e precisava ser substituído por uma nova estrutura em PostgreSQL.
 
-Docker & Docker Compose (para ambientes MySQL e PostgreSQL)
+O desafio consistiu em desenvolver uma aplicação responsável por:
 
-JUnit 5 (Testes automatizados)
+- Ler os dados da base legada.
+- Transformar informações conforme as regras de negócio.
+- Mapear os identificadores antigos para os novos.
+- Preservar os relacionamentos entre as entidades.
+- Tratar registros inválidos, duplicados e inconsistentes.
+- Registrar ocorrências encontradas durante a migração.
+- Persistir os dados na nova estrutura.
 
-📋 Pré-requisitos
+A implementação foi desenvolvida em Java com Spring Boot, utilizando JDBC para executar as consultas e operações de persistência.
 
-Certifique-se de ter instalado na sua máquina:
+## Tecnologias utilizadas
 
-Docker Desktop (em execução)
+| Tecnologia | Utilização |
+|---|---|
+| Java | Linguagem de programação |
+| Spring Boot | Estrutura da aplicação |
+| JdbcTemplate | Acesso e manipulação dos dados |
+| MySQL | Banco de dados legado |
+| PostgreSQL | Banco de dados de destino |
+| Docker Compose | Preparação do ambiente dos bancos |
+| SQL | Consultas e manipulação dos dados |
+| Maven | Gerenciamento do projeto |
 
-Java JDK 17 ou superior
+## Arquitetura da migração
 
-Maven
+O processo utiliza duas bases de dados independentes:
 
-🚀 Como Preparar o Ambiente
+```text
+       MYSQL (LEGADO)
+              |
+              | Leitura dos dados
+              v
+     JAVA + SPRING BOOT
+              |
+              | Transformação
+              | Validação
+              | Mapeamento de IDs
+              v
+      POSTGRESQL (NOVO)
+```
 
-O projeto utiliza portas personalizadas para evitar conflitos com serviços locais já existentes:
+A aplicação conecta-se aos dois bancos simultaneamente: consulta os dados do MySQL e realiza as operações de migração no PostgreSQL.
 
-MySQL Legado: Porta 3307
+## Funcionalidades implementadas
 
-PostgreSQL Novo: Porta 5433
+- Migração de dados entre SGBDs diferentes.
+- Transformação de dados conforme regras de negócio.
+- Conversão e padronização de informações.
+- Tratamento de inconsistências e registros inválidos.
+- Mapeamento entre identificadores legados e novos IDs.
+- Preservação de relacionamentos entre tabelas.
+- Registro de problemas encontrados durante o processo.
+- Migração de metadados de anexos.
+- Organização do processo por serviços e repositórios.
 
-1. Subir os Bancos de Dados via Docker
+## Como executar o projeto
 
-Na raiz do projeto onde se encontra o ficheiro docker-compose.yml, execute:
+### Pré-requisitos
 
+Antes de começar, você precisará ter instalado:
+
+- [Java JDK](https://www.oracle.com/java/technologies/downloads/)
+- [Maven](https://maven.apache.org/)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- [Git](https://git-scm.com/)
+
+### 1. Clone o repositório
+
+```bash
+git clone https://github.com/SEU-USUARIO/SEU-REPOSITORIO.git
+```
+
+Entre na pasta do projeto:
+
+```bash
+cd migration
+```
+
+### 2. Prepare os bancos de dados
+
+O repositório disponibiliza o `docker-compose.yml` e os arquivos necessários para preparar as duas bases.
+
+Execute:
+
+```bash
 docker compose up -d
+```
 
+Esse comando inicia os containers, restaura o backup do MySQL e prepara a estrutura do PostgreSQL.
 
-Este comando vai criar os contentores, restaurar automaticamente o dump do MySQL legado (legado/backup_helpdesk_legado.sql) e inicializar o schema vazio do PostgreSQL (novo/schema.sql).
+A primeira inicialização pode levar alguns minutos.
 
-Acompanhe os logs do MySQL até ver a mensagem de prontidão:
+Para acompanhar a inicialização:
 
+```bash
 docker compose logs -f legado
+```
 
+Aguarde a mensagem indicando que o MySQL está pronto para receber conexões.
 
-⚙️ Como Executar a Migração
+### 3. Confira os bancos
 
-Após garantir que ambos os bancos estão ativos e acessíveis nas portas 3307 (MySQL) e 5433 (PostgreSQL), execute a aplicação Spring Boot através da sua IDE favorita (IntelliJ IDEA, Eclipse) ou via linha de comando com o Maven:
+**MySQL — banco legado**
 
+```bash
+docker compose exec legado mysql -uroot -plegado helpdesk -e "SHOW TABLES;"
+```
+
+**PostgreSQL — banco de destino**
+
+```bash
+docker compose exec novo psql -U helpdesk -d helpdesk -c "\dt"
+```
+
+### 4. Execute a aplicação
+
+Na raiz do projeto, execute:
+
+```bash
 mvn spring-boot:run
+```
 
+A aplicação iniciará o processo de migração conforme a configuração implementada.
 
-O programa executará o processo de de-para respeitando a ordem correta de dependências (Setores -> Categorias -> Usuários -> Chamados -> Interações -> Anexos), garantindo:
+## Configuração das conexões
 
-Idempotência (R02): Pode ser executado múltiplas vezes sem duplicar registos.
+O ambiente Docker utiliza as seguintes configurações:
 
-Registo de Issues (R03): Dados inválidos ou corrigidos geram ocorrências na tabela migration_issues.
+| Configuração | MySQL | PostgreSQL |
+|---|---|---|
+| Host | localhost | localhost |
+| Porta | 3307 | 5433 |
+| Database | helpdesk | helpdesk |
+| Usuário | root | helpdesk |
+| Senha | legado | novo |
 
-Mapeamento de IDs (R04): Todos os cruzamentos antigos e novos são guardados em migration_id_map.
+As portas foram configuradas de forma diferente das portas padrão para evitar conflitos com instalações locais.
 
-🧪 Como Executar os Testes Automatizados
+> As credenciais acima são destinadas exclusivamente ao ambiente local de desenvolvimento.
 
-Para validar as regras de negócio críticas (transformação de e-mails, normalização de telefones, fuso horário, regras de nomes, etc.), execute os testes unitários e de integração com o Maven:
+## Arquivos disponibilizados
 
-mvn test
+Além do código-fonte, o repositório contém os arquivos necessários para reproduzir o ambiente do desafio:
 
+- `docker-compose.yml`: configuração dos containers dos bancos.
+- Backup do banco legado: arquivo SQL utilizado para restaurar os dados no MySQL.
+- Schema do banco novo: estrutura utilizada para preparar o PostgreSQL.
 
-📂 Estrutura do Projeto
+Assim, qualquer pessoa pode subir as duas bases localmente e desenvolver sua própria solução de migração.
 
-src/main/java/com/db/migration/
+## Como reproduzir o desafio
 
-model/: Entidades de mapeamento do legado e do banco novo.
+Quer tentar implementar sua própria solução?
 
-repository/: Repositórios de acesso aos dados via JdbcTemplate (separados para legado e novo).
+1. Clone o repositório.
+2. Suba os bancos utilizando Docker Compose.
+3. Explore os dados do banco legado.
+4. Analise a estrutura do PostgreSQL.
+5. Desenvolva sua própria estratégia de migração.
 
-service/: Regras de negócio e motores de migração de de-para.
+Você pode utilizar Java, Python, C#, Node.js ou outra linguagem de sua preferência.
 
-novo/schema.sql: Estrutura relacional do banco de destino (PostgreSQL).
+A proposta é justamente explorar os desafios envolvidos na migração de dados entre estruturas diferentes.
 
-legado/: Contém o backup SQL do sistema antigo.
+## Aprendizados
 
-🔄 Reiniciar o Ambiente do Zero
+Esse projeto proporcionou uma experiência prática com:
 
-Se precisar de limpar todos os dados inseridos no PostgreSQL e recomeçar a migração de forma limpa:
+- Integração de aplicações com múltiplos bancos de dados.
+- Diferenças entre MySQL e PostgreSQL.
+- Manipulação de dados utilizando JDBC.
+- Modelagem e integridade referencial.
+- Tratamento de dados inconsistentes.
+- Regras de negócio aplicadas à migração.
+- Organização de código e separação de responsabilidades.
 
-docker compose down -v
-docker compose up -d
+---
+
+**Desenvolvido por [Kelly Ramos](https://github.com/kellyxwz)**
+
+[GitHub](https://github.com/kellyxwz) • [LinkedIn](https://www.linkedin.com/in/kellyxwz/)
